@@ -23,31 +23,31 @@ sheettwo = booktwo.active
 def kroba(stroka):
     if match := re.fullmatch(pattern1, stroka):
         raz, dva = match[1], match[2]
-        print('raz:', raz, 'dva:', dva)
+        #print('raz:', raz, 'dva:', dva)
         return {"raz" : raz, "dva" : dva}
     elif match := re.fullmatch(pattern2, stroka):
         raz, dva, tri = match[1], match[2], match[3]
-        print('raz:', raz, 'dva:', dva, 'tri:', tri)
+        #print('raz:', raz, 'dva:', dva, 'tri:', tri)
         return {"raz" : raz, "dva" : dva, "tri" : tri}
     elif match := re.fullmatch(pattern3, stroka):
         raz, dva, tri, chetire, = match[1], match[2], match[3], match[4]
-        print('raz:', raz, 'dva:', dva, 'tri:', tri, 'chetire:', chetire)
+        #print('raz:', raz, 'dva:', dva, 'tri:', tri, 'chetire:', chetire)
         return {"raz" : raz, "dva" : dva, "tri" : tri, "chetire" : chetire}
     elif match := re.fullmatch(pattern4, stroka):
         raz, dva, tri, chetire, pat = match[1], match[2], match[3], match[4], match[5]
-        print('raz:', raz, 'dva:', dva, 'tri:', tri, 'chetire:', chetire, 'pat:', pat)
+        #print('raz:', raz, 'dva:', dva, 'tri:', tri, 'chetire:', chetire, 'pat:', pat)
         return {"raz" : raz, "dva" : dva, "tri" : tri, "chetire": chetire, "pat" : pat}
     else:
-        print(stroka, 'neverniy')
+        #print(stroka, 'neverniy')
         return None
 
-#Запись элементов из excel в словарь1
+#Запись элементов из excel в список1
 for i, row in enumerate(range(1, sheetone.max_row+1)):
     kod = sheetone[row][0].value
     name = sheetone[row][1].value
     inputData.append({"name": name, "id": kroba(kod)})
 
-#Запись элементов из excel в словарь2
+#Запись элементов из excel в список2
 for i, row in enumerate(range(1, sheettwo.max_row+1)):
     kod = sheettwo[row][0].value
     name = sheettwo[row][1].value
