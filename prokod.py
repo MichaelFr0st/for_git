@@ -12,11 +12,11 @@ pattern3 = r'(\w+)[-\.,\\](\w+)[-\.,\\](\w+)[-\.,\\](\w+)'
 pattern4 = r'(\w+)[-\.,\\](\w+)[-\.,\\](\w+)[-\.,\\](\w+)[-\.,\\](\w+)'
 
 #Открытие excel 1
-bookone = openpyxl.open(r"C:\Users\username\Desktop\rabs\fortest1.xlsx", read_only=True)
+bookone = openpyxl.open(r".\fortest1.xlsx", read_only=True)
 sheetone = bookone.active
 
 #Открытие excel 2
-booktwo = openpyxl.open(r"C:\Users\username\Desktop\rabs\fortest2.xlsx", read_only=True)
+booktwo = openpyxl.open(r".\fortest2.xlsx", read_only=True)
 sheettwo = booktwo.active
 
 #Обработчик строк, возвращает словари
