@@ -1,5 +1,6 @@
 # openpyxl - открытие экселя, re - регулярки, fuzzywuzzy - Расстояние Левенштейна
 from fuzzywuzzy import fuzz
+from emoji import emojize
 from fuzzywuzzy import process
 import openpyxl
 import re
@@ -31,6 +32,7 @@ def funk(stroka):
     if res := obj.split(stroka):
         return res
     else:
+        print('to4no neverniy')
         return None
 
 #Обработчик строк, возвращает словари
@@ -52,54 +54,69 @@ def kroba(stroka):
         #print('raz:', raz, 'dva:', dva, 'tri:', tri, 'chetire:', chetire, 'pat:', pat)
         return {"raz" : raz, "dva" : dva, "tri" : tri, "chetire": chetire, "pat" : pat}
     else:
-        #print(stroka, 'neverniy')
+        print(stroka, 'neverniy')
         return None
 
-#Дальше идет заполнение списка, в дальнейшем сделаю одной функцией, на входе будет поступать sheetnumber(one or two), Data(input or store)
-#В последней строке для заполнения id используется функции: kroba(более точное сравнение по патернам) или funk(тупа сплитую строку)
-#Запись элементов из excel в список1
-for i, row in enumerate(range(1, sheetone.max_row+1)):
-    kod = sheetone[row][0].value
-    name = sheetone[row][1].value
-    inputData.append({"name": name, "id": funk(kod)})
+#Заполнение списка, на входе Имя списка, Имя таблицы, Режим
+#Для заполнения id используются функции(режимы): kroba(более точное сравнение по патернам) или funk(тупа сплитую строку)
+def zapolnator(spisok, table, rejim):
+    if rejim == funk:
+        for i, row in enumerate(range(1, table.max_row+1)):
+            kod = table[row][0].value
+            name = table[row][1].value
+            spisok.append({"name": name, "id": funk(kod)})
+    elif rejim == kroba:
+        for i, row in enumerate(range(1, table.max_row+1)):
+            kod = table[row][0].value
+            name = table[row][1].value
+            spisok.append({"name":name, "id":kroba(kod)})
+    else:
+        print('huinu delaesh')
+        return None
 
-#Запись элементов из excel в список2
-for i, row in enumerate(range(1, sheettwo.max_row+1)):
-    kod = sheettwo[row][0].value
-    name = sheettwo[row][1].value
-    storeData.append({"name": name, "id": funk(kod)})
+#Вставка в значения в эксель(Названия листа, Данные для вставки, Нрмер колонки, Итератор списка(номер строки))
+def ex_vstavka(list_name, strok, col_num, itr):
+    value = str(strok)
+    cell = list_name.cell(row = itr+1, column = col_num)
+    cell.value = value
 
-#тестил сравнение левенштайна
-#https://habr.com/ru/post/491448/
-#В статье на хабре показывают как сравнивать списки, думаю что это похоже на мой случай
-a = fuzz.ratio('Блок цилиндров ЯМЗ-236М2 Н/О (под гильзу с поршнем 236-1004005-Б) АВТОДИЗЕЛЬ №','Блок цилиндров ЯМЗ-236НЕ2,БЕ2,6562 общ.ГБЦ под кор.гильзу Евро-2,3 АВТОДИЗЕЛЬ №')
-b = fuzz.ratio('Блок цилиндров ЯМЗ-236М2 Н/О (под гильзу с поршнем 236-1004005-Б) АВТОДИЗЕЛЬ №','Блок цилиндров ЯМЗ-236М2 Н/О (под гильзу с поршнем 236-1004016-Б) АВТОДИЗЕЛЬ №')
-#print(a,b)
+#Отрабатывает функция заполнения
+zapolnator(inputData,sheetone,funk)
+zapolnator(storeData,sheettwo, funk)
 
-#Пробовал ходить по спискам через циклы(старая версия), более новую не сохранил
-# for it in range(len(inputData)):
-#     chk=inputData[it]
-#     tsk=chk.get('id')
-#     dsk=tsk.get('model')
-#
-#     for ip in range(len(storeData)):
-#         kones = range(len(storeData))
-#         tgk=storeData[ip]
-#         thk=tgk.get('id')
-#         tlk=thk.get('model')
-#         if dsk == tlk:
-#             print(dsk, tlk, 'sucess')
-#             break
+#Создание документа(таблицы) для финального результата
+wb = openpyxl.Workbook()
+sheet = wb['Sheet']
 
-#Выводы для тестов
-#troka = input('Dai teksta\n')
-#troka = inputData[1]
-#print(troka)
-#print(inputData)
-#print(storeData)
+#Логика сравнения:
+# 1-ое сравнение In[id]:Ex[id], запись IN[id] в 1 столбец, EX[id] запись в 4 столбец
+# 2-ое сравнение In[id]:Ex[name], запись EX[name] в 5 столбец
+# 3-е сравнение In[name]:Ex[name], запись IN[name] в 2 столбец
+# 4-е сравнение In[kolvo]:Ex[kolvo], запись IN[kolvo] в 3 столбец, EX[kolvo] запись в 6 столбец
+# 7 столбец нужен для цены за штуку(наша цена) для дальнейшего расчета формул и формирования предложения
 
-# for k in range(len(inputText)):
-#     print(inputText[k])
-#
-# for j in range(len(storeText)):
-#     print(storeText[j])
+#Сравнение списков и построчная запись в таблицу
+for it in range(len(inputData)):
+    kof = 0
+    if troka:=inputData[it]['id']:
+        ex_vstavka(sheet, inputData[it]['id'], 1, it)
+        ex_vstavka(sheet, inputData[it]['name'],2, it)
+        for ik in range(len(storeData)):
+            b = fuzz.WRatio(inputData[it]['id'],storeData[ik]['id'])
+            if b == 100:
+                hroka = storeData[ik]['id']
+                break
+            elif b < 70:
+                hroka = '\N{no entry}'
+            elif b > kof:
+                hroka = storeData[ik]['id']
+            else:
+                hroka = ''
+                break
+    ex_vstavka(sheet, hroka, 4, it)
+    ex_vstavka(sheet, storeData[ik]['name'], 5, it)
+
+#Сохранение документа
+wb.save(r"/home/bender/Документы/res/example.xlsx")
+
+print(emojize(":thumbs_up:"))
