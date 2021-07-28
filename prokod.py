@@ -1,35 +1,34 @@
-# openpyxl - открытие экселя, re - регулярки, fuzzywuzzy - Расстояние Левенштейна
+# csv - работа с .csv, re - регулярки, fuzzywuzzy - Расстояние Левенштейна
 from fuzzywuzzy import fuzz
-from emoji import emojize
 from fuzzywuzzy import process
-import openpyxl
+from emoji import emojize
+import csv
 import re
+import time
 
-#Создание пустых списков под заполнение данными из excel
+start_time = time.time()
+
+# Пути к файла которые будем сравнивать
+csv_path_one = "/home/username/Документы/rabs/spares.csv"
+csv_path_two = "/home/username/Документы/rabs/fbr.csv"
+
+#Создание пустых списков под заполнение данными из csv
 inputData = []
 storeData = []
-
-#Список патернов для регулярных выражений
+resData = []
+# Список патернов для регулярных выражений
 pattern1 = r'\b(\w+)[-\.,\\](\w+)\b'
 pattern2 = r'(\w+)[-\.,\\_](\w+)[-\.,\\_](\w+)'
 pattern3 = r'(\w+)[-\.,\\](\w+)[-\.,\\](\w+)[-\.,\\](\w+)'
 pattern4 = r'(\w+)[-\.,\\](\w+)[-\.,\\](\w+)[-\.,\\](\w+)[-\.,\\](\w+)'
 
-#Тут нужно будет вставить скомпилированые регулярки для многократного использования compile()
+# Тут нужно будет вставить скомпилированые регулярки для многократного использования compile()
 # reobj = re.compile("\b(\w+)[-\.,\\](\w+)\b")
 obj = re.compile(r'[-\.,\\/_()#]')
 
-#Открытие excel 1
-bookone = openpyxl.open(r"/home/bender/Документы/rabs/fortest1.xlsx", read_only=True)
-sheetone = bookone.active
-
-#Открытие excel 2
-booktwo = openpyxl.open(r"/home/bender/Документы/rabs/fortest2.xlsx", read_only=True)
-sheettwo = booktwo.active
-
 #Обработчик строк, разбивает строку по скомпиленой регулярке
 def funk(stroka):
-    if res := obj.split(stroka):
+    if res := obj.split(str(stroka)):
         return res
     else:
         print('to4no neverniy')
@@ -57,66 +56,56 @@ def kroba(stroka):
         print(stroka, 'neverniy')
         return None
 
-#Заполнение списка, на входе Имя списка, Имя таблицы, Режим
-#Для заполнения id используются функции(режимы): kroba(более точное сравнение по патернам) или funk(тупа сплитую строку)
-def zapolnator(spisok, table, rejim):
-    if rejim == funk:
-        for i, row in enumerate(range(1, table.max_row+1)):
-            kod = table[row][0].value
-            name = table[row][1].value
-            spisok.append({"name": name, "id": funk(kod)})
-    elif rejim == kroba:
-        for i, row in enumerate(range(1, table.max_row+1)):
-            kod = table[row][0].value
-            name = table[row][1].value
-            spisok.append({"name":name, "id":kroba(kod)})
-    else:
-        print('huinu delaesh')
-        return None
+# Функция формирования словарей и добавления их в список типа: [{'id':id,'name':name},{'id':id,'name':name}]
+def csv_dict_reader(file_obj,dict_num):
+    reader = csv.DictReader(file_obj, delimiter=',')
+    for line in reader:
+        razbiv = funk(line["id"])
+        dict_num.append({"id":razbiv, "name":line["name"]})
+#        print(line)
+#        print(line["id"]), print(line["name"])
 
-#Вставка в значения в эксель(Названия листа, Данные для вставки, Нрмер колонки, Итератор списка(номер строки))
-def ex_vstavka(list_name, strok, col_num, itr):
-    value = str(strok)
-    cell = list_name.cell(row = itr+1, column = col_num)
-    cell.value = value
+def csv_writer(data, path):
+    with open(path, "w", newline='') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
+        for line in data:
+            writer.writerow(line)
 
-#Отрабатывает функция заполнения
-zapolnator(inputData,sheetone,funk)
-zapolnator(storeData,sheettwo, funk)
 
-#Создание документа(таблицы) для финального результата
-wb = openpyxl.Workbook()
-sheet = wb['Sheet']
+
+# Начало, вызов заполнятора списков
+with open(csv_path_one, "r") as i_obj:
+    csv_dict_reader(i_obj,inputData)
+with open(csv_path_two, "r") as s_obj:
+    csv_dict_reader(s_obj,storeData)
 
 #Логика сравнения:
-# 1-ое сравнение In[id]:Ex[id], запись IN[id] в 1 столбец, EX[id] запись в 4 столбец
-# 2-ое сравнение In[id]:Ex[name], запись EX[name] в 5 столбец
-# 3-е сравнение In[name]:Ex[name], запись IN[name] в 2 столбец
-# 4-е сравнение In[kolvo]:Ex[kolvo], запись IN[kolvo] в 3 столбец, EX[kolvo] запись в 6 столбец
-# 7 столбец нужен для цены за штуку(наша цена) для дальнейшего расчета формул и формирования предложения
+# 1-ое сравнение In[id]:Ex[id]
+# 2-ое сравнение In[id]:Ex[name]
+# 3-е сравнение In[name]:Ex[name]
+# 4-е сравнение In[kolvo]:Ex[kolvo]
 
-#Сравнение списков и построчная запись в таблицу
-for it in range(len(inputData)):
-    kof = 0
-    if troka:=inputData[it]['id']:
-        ex_vstavka(sheet, inputData[it]['id'], 1, it)
-        ex_vstavka(sheet, inputData[it]['name'],2, it)
-        for ik in range(len(storeData)):
-            b = fuzz.WRatio(inputData[it]['id'],storeData[ik]['id'])
-            if b == 100:
-                hroka = storeData[ik]['id']
+#Сравнение списков и построчная запись в финальный csv файл
+nomer = 0
+a = len(storeData)
+print(a)
+for it in inputData:
+    i = 0
+    #nomer += 1
+    for ik in storeData:
+        if it['id'] != ik['id']:
+            i +=1
+            if i == a:
+                #print(i)
+                #print(it['id'], 'ne sovpalo')
                 break
-            elif b < 70:
-                hroka = '\N{no entry}'
-            elif b > kof:
-                hroka = storeData[ik]['id']
             else:
-                hroka = ''
-                break
-    ex_vstavka(sheet, hroka, 4, it)
-    ex_vstavka(sheet, storeData[ik]['name'], 5, it)
+            #print(i)
+                continue
+        else:
+            if it['id'] == ik['id']:
+                print('\n',it['id'], it['name'], ik['id'], ik['name'], 'sovpalo')
+    #print(nomer)
 
-#Сохранение документа
-wb.save(r"/home/bender/Документы/res/example.xlsx")
 
-print(emojize(":thumbs_up:"))
+print("--- %s seconds ---" % (time.time() - start_time))
